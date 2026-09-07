@@ -3,7 +3,6 @@
 
 # Run the standard UniVTAC data-collection tasks one at a time.  The next task
 # is started only after the current Isaac Sim process has exited.
-# Usage: bash scripts/collect_all_tasks.sh
 
 set -uo pipefail
 
@@ -21,14 +20,104 @@ TASKS=(
     put_bottle_in_shelf
 )
 
-# Shared collection settings.  Environment variables make intentional batch
-# overrides possible without duplicating or editing eight commands.
-CONFIG="${UNIVTAC_BATCH_CONFIG:-task_config/demo.yml}"
-EPISODE_NUM="${UNIVTAC_BATCH_EPISODE_NUM:-1}"
-START_SEED="${UNIVTAC_BATCH_START_SEED:-0}"
-MAX_SEED="${UNIVTAC_BATCH_MAX_SEED:-20}"
-GPU="${UNIVTAC_BATCH_GPU:-0}"
-VIZ="${UNIVTAC_BATCH_VIZ:-none}"
+usage() {
+    cat <<'EOF'
+Usage:
+  bash scripts/collect_all_tasks.sh \
+    --config task_config/demo.yml \
+    --episode_num 1 \
+    --start_seed 0 \
+    --max_seed 20 \
+    --gpu 0 \
+    --viz none
+
+The supplied settings are applied to all eight tasks. Tasks are always run
+strictly sequentially; this script never launches multiple Isaac Sim instances
+at the same time.
+EOF
+}
+
+die() {
+    echo "Error: $*" >&2
+    echo >&2
+    usage >&2
+    exit 2
+}
+
+require_value() {
+    if (( $# < 2 )) || [[ "$2" == --* ]]; then
+        die "$1 requires a value."
+    fi
+}
+
+CONFIG=""
+EPISODE_NUM=""
+START_SEED=""
+MAX_SEED=""
+GPU=""
+VIZ=""
+
+while (( $# > 0 )); do
+    case "$1" in
+        --config|--yaml)
+            require_value "$@"
+            CONFIG="$2"
+            shift 2
+            ;;
+        --episode_num)
+            require_value "$@"
+            EPISODE_NUM="$2"
+            shift 2
+            ;;
+        --start_seed)
+            require_value "$@"
+            START_SEED="$2"
+            shift 2
+            ;;
+        --max_seed)
+            require_value "$@"
+            MAX_SEED="$2"
+            shift 2
+            ;;
+        --gpu)
+            require_value "$@"
+            GPU="$2"
+            shift 2
+            ;;
+        --viz)
+            require_value "$@"
+            VIZ="$2"
+            shift 2
+            ;;
+        -h|--help)
+            usage
+            exit 0
+            ;;
+        *)
+            die "unknown argument: $1"
+            ;;
+    esac
+done
+
+[[ -n "$CONFIG" ]] || die "--config is required."
+[[ -n "$EPISODE_NUM" ]] || die "--episode_num is required."
+[[ -n "$START_SEED" ]] || die "--start_seed is required."
+[[ -n "$MAX_SEED" ]] || die "--max_seed is required."
+[[ -n "$GPU" ]] || die "--gpu is required."
+[[ -n "$VIZ" ]] || die "--viz is required."
+
+if [[ ! "$EPISODE_NUM" =~ ^[0-9]+$ ]] || (( EPISODE_NUM <= 0 )); then
+    die "--episode_num must be a positive integer."
+fi
+if [[ ! "$START_SEED" =~ ^[0-9]+$ ]]; then
+    die "--start_seed must be a non-negative integer."
+fi
+if [[ ! "$MAX_SEED" =~ ^[0-9]+$ ]]; then
+    die "--max_seed must be a non-negative integer."
+fi
+if (( START_SEED > MAX_SEED )); then
+    die "--start_seed must not be greater than --max_seed."
+fi
 
 if [[ "$CONFIG" != /* ]]; then
     CONFIG="$REPO_ROOT/$CONFIG"
