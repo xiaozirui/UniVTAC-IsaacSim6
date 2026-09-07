@@ -35,33 +35,60 @@ Isaac Sim 6 and Isaac Lab 3 changed application launch, camera and pose APIs, sc
 | Upstream `isaac51` (`d541e556`) | 5.1.0 | 2.3.0 | 3.11 |
 | UniVTAC-IsaacSim6 | 6.0.1 RC | 3.0.0 beta 2 patch 1 plus compatibility work | 3.12 |
 
-## Implemented Contributions and Innovation
+## Technical Contributions
 
-The implemented contribution is more than a version-number update:
+The implemented scope comprises the following system and task-level contributions:
 
-- A compatibility boundary for Isaac Lab 3 application lifecycle, scene cloning, pose/quaternion conventions, camera APIs, and visualization modes.
-- Explicit UIPC-to-Fabric/render synchronization so tactile-marker and RTX observations advance with the physics state.
-- Contact-aware task stabilization: grasp-closing behavior, friction/contact tuning, collision-safe motion, and recovery workspaces adapted to the Isaac Sim 6 runtime.
-- Physical success checks and task-specific trajectories for insertion, extraction, lifting, and shelf placement instead of relying only on nominal motion completion.
-- Complete-trajectory capture, deterministic seed controls, bounded failure handling, clean shutdown, and isolated validation outputs for research data collection.
-- Portable launch configuration that keeps simulator installations and machine paths outside the repository.
+- **Simulator compatibility layer.** Migration of application lifecycle, scene cloning, pose and quaternion conventions, camera interfaces, and visualization control to the Isaac Sim 6 / Isaac Lab 3 execution model.
+- **Synchronized visuo-tactile observations.** Explicit coordination of UIPC state updates, Fabric synchronization, and rendering so tactile-marker observations and RTX camera frames correspond to the same simulated state.
+- **Contact-rich task stabilization.** Runtime-specific adaptation of gripper closure, contact and friction parameters, collision-aware approach motion, and per-episode recovery workspaces.
+- **Physics-grounded task verification.** Task-specific success criteria for lifting, insertion, extraction, and shelf placement based on object state and geometric relations rather than motion completion alone.
+- **Research-grade data collection.** Complete trajectory recording, deterministic seed control, bounded failure handling, controlled shutdown, and isolated validation outputs.
+- **Portable runtime boundary.** Environment-based configuration that separates project source from simulator installations, machine paths, generated data, and external assets.
 
-These are engineering and task-execution contributions established by the code and local validation. This repository does not claim a new learned-policy architecture where none has yet been implemented.
+These claims are restricted to behavior represented in the published source and the reported single-case validation. No new learned-policy architecture is claimed as an implemented result in this release.
 
-## Research Innovation Direction
+## Proposed Algorithmic Research Framework
 
-This port is designed as the lower layer of a longer research program:
+The compatibility layer is intended to support a contact-aware visuo-tactile policy architecture in which geometric planning provides a nominal action and tactile feedback supplies closed-loop residual correction. This section defines a research design, not a completed or benchmarked algorithm.
+
+### Multimodal state representation
+
+At time step `t`, the policy receives synchronized visual observations `oᵛ_t`, tactile RGB/marker/depth observations `oᵗ_t`, robot proprioception `q_t`, and an optional language instruction `l`. Modality-specific encoders produce a shared token sequence:
 
 ```text
-UniVTAC upstream
-    -> Isaac Sim 6 / Isaac Lab 3 compatibility
-    -> stable contact-rich task execution
-    -> reproducible visuo-tactile data collection
-    -> tactile representation and VLA research
-    -> new project-owned manipulation algorithms
+z_t = Fuse(E_v(oᵛ_t), E_t(oᵗ_t), E_p(q_t), E_l(l)).
 ```
 
-Planned research includes tactile representations, contact-aware VLA policies, cross-modal alignment between vision/action/touch, failure-aware data curation, and new closed-loop manipulation algorithms. These are clearly marked as future directions rather than completed results.
+The tactile encoder is expected to preserve local marker displacement and contact geometry instead of reducing touch to a binary contact flag. Temporal alignment is enforced at the collection layer so that cross-modal learning does not absorb simulator-induced observation skew.
+
+### Contact-phase-conditioned control
+
+A contact-state estimator predicts contact state `c_t` and manipulation phase `p_t`, such as free-space approach, initial contact, constrained manipulation, or release. The controller combines a nominal motion-planning action with a learned residual:
+
+```text
+a_t = a_plan,t + g(c_t, p_t) · Δa_θ(z_≤t, c_t, p_t),
+```
+
+where `g` limits learned corrections outside contact-sensitive phases. This hybrid formulation is designed to retain the geometric reliability of cuRobo-style planning while enabling tactile correction for grasp closure, insertion alignment, slip, and contact-force imbalance.
+
+### Failure-aware data and recovery loop
+
+Successful trajectories provide task demonstrations, while failed seeds are retained as structured hard negatives. Physics-based success checks supervise a recovery policy that may regrasp, retract, realign, or replan. The resulting dataset associates observations and actions with contact phase, failure mode, and recovery outcome rather than storing only successful terminal labels.
+
+### Learning objectives
+
+A candidate training objective combines action prediction, contact-state estimation, cross-modal alignment, and outcome prediction:
+
+```text
+L = λ_a L_action + λ_c L_contact + λ_x L_cross-modal + λ_s L_success.
+```
+
+The modular objective permits controlled ablations of vision-only, touch-only, early-fusion, late-fusion, and language-conditioned variants without changing the task interface.
+
+### Evaluation methodology
+
+The proposed framework should be evaluated through multi-seed task success, contact-phase accuracy, recovery success, visual/tactile ablations, sensor and texture randomization, execution latency, and transfer across tactile sensors and manipulation tasks. Future algorithm implementations will be placed in a separate `research/` tree and reported independently from the compatibility results.
 
 ## Installation
 
