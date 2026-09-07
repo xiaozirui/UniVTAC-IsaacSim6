@@ -1,0 +1,74 @@
+# External or unaudited trees are not part of the public source release.
+/assets/
+/third_party/
+/policy/
+/encoder/
+/data/
+
+# Local credentials and machine configuration.
+.env
+.env.*
+!.env.example
+.python.env
+.localrc.sh
+*.pem
+*.key
+id_rsa*
+id_ed25519*
+
+# Python environments, packaging, and caches.
+.venv/
+venv/
+env/
+build/
+dist/
+*.egg-info/
+**/__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Native and simulator build output.
+*.o
+*.a
+*.so
+*.so.*
+*.dylib
+*.dll
+*.whl
+/.runtime-validation/
+
+# Generated research outputs and archives.
+*.log
+*.h5
+*.hdf5
+*.mp4
+*.avi
+*.mov
+*.pt
+*.pth
+*.ckpt
+*.npy
+*.npz
+*.usd
+*.usda
+*.usdc
+*.obj
+*.stl
+*.fbx
+*.tar
+*.tar.gz
+*.tar.xz
+*.tgz
+*.zip
+
+# IDE and OS metadata.
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db

@@ -1,0 +1,27 @@
+# Modified from the UniVTAC project.
+# Changes in this derivative project include compatibility adaptations
+# for Isaac Sim 6.0.1 and Isaac Lab 3.0.0.
+
+save_dir: ./data
+
+decimation: 1
+
+save_frequency: 2
+video_frequency: 2
+render_frequency: 1 # update task rendering every step; --viz controls whether a GUI exists
+# Per-camera capture resolution. The composite MP4 contains head, wrist, and
+# two tactile-marker views, and is written at 1460x360 for this setting.
+video_resolution: [640, 360]
+
+random_texture: false # set to true to enable random texture
+
+use_seed: true
+episode_num: 5
+
+sensor_type: gsmini
+
+observations:
+  camera: ['rgb']
+  tactile: ['rgb', 'rgb_marker', 'marker', 'depth', 'pose']
+  embodiment: ['joint', 'ee']
+  actor: true
