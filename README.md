@@ -125,11 +125,41 @@ These are single-case smoke results, not robustness or benchmark claims. Reprodu
 
 ## Data Collection
 
+### Single-task collection
+
 ```bash
 bash scripts/run_isaacsim6.sh scripts/collect_data.py \
   lift_can task_config/demo.yml \
   --episode_num 1 --start_seed 0 --max_seed 0 --gpu 0 --viz none
 ```
+
+### Sequential collection for all tasks
+
+Use the batch entry point to submit one shared collection configuration to all
+eight supported tasks with a single command:
+
+```bash
+bash scripts/collect_all_tasks.sh \
+  --config task_config/demo.yml \
+  --episode_num 1 \
+  --start_seed 0 \
+  --max_seed 20 \
+  --gpu 0 \
+  --viz none
+```
+
+All six options are required for each invocation. `--config` selects the YAML
+collection configuration (`--yaml` is accepted as an alias), `--episode_num`
+sets the requested number of successful episodes per task, and `--start_seed`
+through `--max_seed` define the inclusive seed search interval. `--gpu` and
+`--viz` are forwarded unchanged to each task.
+
+The eight tasks run strictly sequentially: the script waits for the current
+Isaac Sim process to exit before starting the next task. A failed task is
+recorded without preventing the remaining tasks from running. Per-task console
+logs and a tab-separated exit-code summary are written to
+`data/_batch_runs/<timestamp>/`; task data follows the existing
+`data/<task>/<config-name>/` layout.
 
 Generated datasets, logs, videos, checkpoints, and evaluation outputs are excluded from Git.
 

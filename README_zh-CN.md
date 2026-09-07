@@ -125,11 +125,37 @@ bash scripts/run_isaacsim6.sh -c "import isaaclab; print('Isaac Lab import OK')"
 
 ## 数据采集
 
+### 单任务采集
+
 ```bash
 bash scripts/run_isaacsim6.sh scripts/collect_data.py \
   lift_can task_config/demo.yml \
   --episode_num 1 --start_seed 0 --max_seed 0 --gpu 0 --viz none
 ```
+
+### 八任务串行采集
+
+使用批处理入口可以通过一条命令，将同一套采集参数依次应用到全部八个支持任务：
+
+```bash
+bash scripts/collect_all_tasks.sh \
+  --config task_config/demo.yml \
+  --episode_num 1 \
+  --start_seed 0 \
+  --max_seed 20 \
+  --gpu 0 \
+  --viz none
+```
+
+每次执行均须显式提供以上六项参数。`--config` 用于选择 YAML 采集配置（也可使用
+`--yaml` 别名）；`--episode_num` 表示每个任务本次需要采集的成功 episode 数；
+`--start_seed` 和 `--max_seed` 定义闭区间 seed 搜索范围；`--gpu` 与 `--viz`
+会不作修改地传递给每一个任务。
+
+八个任务严格串行执行：当前 Isaac Sim 进程完全退出后，脚本才启动下一个任务。
+单个任务失败会被记录，但不会阻止剩余任务继续运行。各任务终端日志和包含退出码的
+汇总表保存在 `data/_batch_runs/<时间戳>/`，采集数据沿用
+`data/<任务名>/<配置名>/` 目录结构。
 
 生成的数据集、日志、视频、checkpoint 和评测输出均不进入 Git。
 
